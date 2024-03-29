@@ -14,14 +14,17 @@
  */
 void sub_bytes(unsigned char *block) {
   // TODO: Implement me!
+  // Every byte in the state is replaced by another one, using the Rijndael S Box
 }
 
 void shift_rows(unsigned char *block) {
   // TODO: Implement me!
+  // Every row in 4x4 is shifted to the left by a certain amount 
 }
 
 void mix_columns(unsigned char *block) {
   // TODO: Implement me!
+  // A linear transformation of the columns of state
 }
 
 /*
@@ -44,6 +47,7 @@ void invert_mix_columns(unsigned char *block) {
  */
 void add_round_key(unsigned char *block, unsigned char *round_key) {
   // TODO: Implement me!
+  // Each byte of the state is combined with a round key, which is a different key for each round and derived from the Rijndael key schedule
 }
 
 /*
