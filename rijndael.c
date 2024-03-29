@@ -2,6 +2,8 @@
  * Aisling Young - D21127518
  * TODO: Add your name and student number here, along with
  *       a brief description of this code.
+ * free(variable);
+ * malloc
  */
 
 #include <stdlib.h>
