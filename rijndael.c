@@ -58,8 +58,10 @@ static const uint8_t inv_s_box[256] = {
  * Operations used when encrypting a block
  */
 void sub_bytes(unsigned char *block) {
-  // TODO: Implement me!
   // Every byte in the state is replaced by another one, using the Rijndael S Box
+ for (int i = 0; i < 16; ++i) { // AES operates on 16 bytes (128 bits) at a time
+        block[i] = s_box[block[i]]; // Substitute each byte using the S-box
+    }
 }
 
 void shift_rows(unsigned char *block) {
@@ -123,3 +125,4 @@ unsigned char *aes_decrypt_block(unsigned char *ciphertext,
       (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
   return output;
 }
+
