@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Clone the repo
         uses: actions/checkout@v4
+        with:
+          submodules: 'true'
       - name: Test the code
         run: |
           sudo apt install -y build-essential python-is-python3
