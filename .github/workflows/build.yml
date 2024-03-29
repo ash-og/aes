@@ -12,15 +12,6 @@ jobs:
         run: |
           sudo apt install -y build-essential python-is-python3
           make all
-  test:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Clone the repo
-        uses: actions/checkout@v4
-        with:
-          submodules: 'true'
       - name: Test the code
-        run: |
-          sudo apt install -y build-essential python-is-python3
+        run:
           make test
