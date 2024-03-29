@@ -17,10 +17,8 @@ class TestAes(unittest.TestCase):
         # Call the C sub_bytes function
         self.rijndael.sub_bytes(block)
 
-
         # Prepare the same input for the Python implementation
         p_block = bytes2matrix(buffer)
-        # result_p = python_sub_bytes(bytes(p_block))
         python_sub_bytes(p_block)
         # Prepare the output for comparison
         p_result = matrix2bytes(p_block)
