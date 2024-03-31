@@ -63,6 +63,11 @@ void sub_bytes(unsigned char *block) {
         block[i] = s_box[block[i]]; // Substitute each byte using the S-box
     }
 }
+    // for (int i = 0; i < 4; i++) {
+    //     for (int j = 0; j < 4; j++) {
+    //         s[i][j] = s_box[s[i][j]];
+    //     }
+
 
 void shift_rows(unsigned char *block) {
   // TODO: Implement me!
@@ -78,7 +83,9 @@ void mix_columns(unsigned char *block) {
  * Operations used when decrypting a block
  */
 void invert_sub_bytes(unsigned char *block) {
-  // TODO: Implement me!
+   for (int i = 0; i < 16; ++i) {
+        block[i] = inv_s_box[block[i]];
+    }
 }
 
 void invert_shift_rows(unsigned char *block) {
