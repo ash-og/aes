@@ -68,17 +68,7 @@ void bytes2matrix(unsigned char *block, unsigned char matrix[4][4]) {
     }
 }
 
-/*
- * Operations used when encrypting a block
- */
-// void sub_bytes(unsigned char *block) {
-//   // Every byte in the state is replaced by another one, using the Rijndael S Box
-//  for (int i = 0; i < 16; ++i) { 
-//         block[i] = s_box[block[i]]; // Substitute each byte using the S-box
-//     }
-// }
-
-void sub_bytes(uint8_t matrix[4][4]) {
+void sub_bytes(unsigned char matrix[4][4]) {
   // Every byte in the state is replaced by another one, using the Rijndael S Box
     for (int i = 0; i < 4; ++i) {
         for (int j = 0; j < 4; ++j) {
@@ -87,9 +77,33 @@ void sub_bytes(uint8_t matrix[4][4]) {
     }
 }
 
-void shift_rows(unsigned char *block) {
-  // TODO: Implement me!
-  // Every row in 4x4 is shifted to the left by a certain amount 
+void shift_rows(unsigned char matrix[4][4]) {
+  unsigned char temp;
+    
+    // Row 1: left shift by 1
+    // s[0][1], s[1][1], s[2][1], s[3][1] = s[1][1], s[2][1], s[3][1], s[0][1]  
+    temp = matrix[0][1];
+    matrix[0][1] = matrix[1][1];
+    matrix[1][1] = matrix[2][1];
+    matrix[2][1] = matrix[3][1];
+    matrix[3][1] = temp;
+
+    // Row 2: left shift by 2
+    // s[0][2], s[1][2], s[2][2], s[3][2] = s[2][2], s[3][2], s[0][2], s[1][2]
+    temp = matrix[0][2];
+    matrix[0][2] = matrix[2][2];
+    matrix[2][2] = temp;
+    temp = matrix[1][2];
+    matrix[1][2] = matrix[3][2];
+    matrix[3][2] = temp;
+
+    // Row 3: left shift by 3 (or right shift by 1)
+    // s[0][3], s[1][3], s[2][3], s[3][3] = s[3][3], s[0][3], s[1][3], s[2][3]
+    temp = matrix[0][3];
+    matrix[0][3] = matrix[3][3];
+    matrix[3][3] = matrix[2][3];
+    matrix[2][3] = matrix[1][3];
+    matrix[1][3] = temp;
 }
 
 void mix_columns(unsigned char *block) {
