@@ -15,7 +15,7 @@ CMatrixType = (ctypes.c_ubyte * 4) * 4  # Defines a 4x4 matrix of unsigned bytes
 c_matrix = CMatrixType()
 
 # Call the bytes2matrix function
-rijndael.bytes2matrix(buffer, c_matrix)
+rijndael.bytes2matrix(block, c_matrix)
 
 # Function to make a string of p_ and C_matrix to allow for comparison
 def create_mx_str(matrix):
