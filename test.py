@@ -36,23 +36,17 @@ class TestAes(unittest.TestCase):
         self.assertEqual(p_matrix_string, c_matrix_string)
 
     def test_sub_bytes(self):
-        # Prepare the input buffer
-        buffer = b'\x00\x01\x02\x03\x04\x05\x06\x07'
-        buffer += b'\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F'
-        block = ctypes.create_string_buffer(buffer)
+        # Creating a matrix data structure for c_matrix
+        CMatrixType = (ctypes.c_ubyte * 4) * 4  # Defines a 4x4 matrix of unsigned bytes
+        c_matrix = CMatrixType()
+
+        p_matrix = p_bytes2matrix(self.buffer)
+        self.rijndael.bytes2matrix(self.block, c_matrix)
 
         # Call the C sub_bytes function
-        self.rijndael.sub_bytes(block)
-
-        # Prepare the same input for the Python implementation
-        p_block = p_bytes2matrix(buffer)
-        p_sub_bytes(p_block)
-        # Prepare the output for comparison
-        p_result = matrix2bytes(p_block)
-
-        # print("C results: ", ctypes.string_at(block,16))
-        # print("Python results: ", p_result)
-        self.assertEqual(ctypes.string_at(block,16), p_result)
+        self.rijndael.sub_bytes(c_matrix)
+        p_sub_bytes(p_matrix)
+        self.assertEqual(ctypes.string_at(c_matrix,16), matrix2bytes(p_matrix))
 
 
 if __name__ == "__main__":
