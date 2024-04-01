@@ -54,6 +54,20 @@ static const uint8_t inv_s_box[256] = {
     0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26, 0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D,
 };
 
+// def bytes2matrix(text):
+//     """ Converts a 16-byte array into a 4x4 matrix.  """
+//     return [list(text[i:i+4]) for i in range(0, len(text), 4)]
+
+// def matrix2bytes(matrix):
+//     """ Converts a 4x4 matrix into a 16-byte array.  """
+//     return bytes(sum(matrix, []))
+
+void bytes2matrix(unsigned char *block, unsigned char matrix[4][4]) {
+    for (int i = 0; i < 16; ++i) {
+        matrix[i / 4][i % 4] = block[i];
+    }
+}
+
 /*
  * Operations used when encrypting a block
  */

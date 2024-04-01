@@ -9,3 +9,7 @@ Here's a quick breakdown:
 
 Using uint8_t and other fixed-width integers (int16_t, uint32_t, etc.) is beneficial when you need precise control over the size of your data, which is particularly important in systems programming, embedded systems, and when interfacing with hardware or network protocols where the exact size of an integer matters for compatibility and efficiency.
 
+
+# usigned char
+
+unsigned char is a character datatype where the variable consumes all the 8 bits of the memory and there is no sign bit (which is there in signed char). So it means that the range of unsigned char data type ranges from 0 to 255.
