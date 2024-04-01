@@ -71,17 +71,21 @@ void bytes2matrix(unsigned char *block, unsigned char matrix[4][4]) {
 /*
  * Operations used when encrypting a block
  */
-void sub_bytes(unsigned char *block) {
+// void sub_bytes(unsigned char *block) {
+//   // Every byte in the state is replaced by another one, using the Rijndael S Box
+//  for (int i = 0; i < 16; ++i) { 
+//         block[i] = s_box[block[i]]; // Substitute each byte using the S-box
+//     }
+// }
+
+void sub_bytes(uint8_t matrix[4][4]) {
   // Every byte in the state is replaced by another one, using the Rijndael S Box
- for (int i = 0; i < 16; ++i) { // AES operates on 16 bytes (128 bits) at a time
-        block[i] = s_box[block[i]]; // Substitute each byte using the S-box
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            matrix[i][j] = s_box[matrix[i][j]]; // Substitute each byte using the S-box
+        }
     }
 }
-    // for (int i = 0; i < 4; i++) {
-    //     for (int j = 0; j < 4; j++) {
-    //         s[i][j] = s_box[s[i][j]];
-    //     }
-
 
 void shift_rows(unsigned char *block) {
   // TODO: Implement me!

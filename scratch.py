@@ -9,9 +9,6 @@ block = ctypes.create_string_buffer(buffer)
 
 
 p_matrix = p_bytes2matrix(buffer)
-print("Python matrix: ", p_matrix)
-
-
 
 # Creating a matrix data structure for c_matrix
 CMatrixType = (ctypes.c_ubyte * 4) * 4  # Defines a 4x4 matrix of unsigned bytes
@@ -20,11 +17,15 @@ c_matrix = CMatrixType()
 # Call the bytes2matrix function
 rijndael.bytes2matrix(buffer, c_matrix)
 
-# Function to print the C matrix in a human-readable form
-def print_c_matrix(matrix):
+# Function to make a string of p_ and C_matrix to allow for comparison
+def create_mx_str(matrix):
+    matrix_string = ''
     for row in matrix:
-        print(' '.join(f'{cell}' for cell in row))
+        for cell in row:
+            matrix_string += ' '.join(f', {cell}')
+    return matrix_string
 
-# Print the C matrix
-print("C matrix:")
-print_c_matrix(c_matrix)
+# Compare matrices
+p_matrix_string = create_mx_str(p_matrix)
+c_matrix_string = create_mx_str(c_matrix)
+print(p_matrix_string == c_matrix_string)
