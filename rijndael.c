@@ -106,9 +106,43 @@ void shift_rows(unsigned char matrix[4][4]) {
     matrix[1][3] = temp;
 }
 
-void mix_columns(unsigned char *block) {
-  // TODO: Implement me!
+
+
+// xtime = lambda a: (((a << 1) ^ 0x1B) & 0xFF) if (a & 0x80) else (a << 1)
+
+unsigned char xtime(unsigned char a) {
+    return (a & 0x80)?((a << 1) ^ 0x1B) & 0xFF:(a << 1);
+}
+
+// def mix_single_column(a):
+//     # see Sec 4.1.2 in The Design of Rijndael
+//     t = a[0] ^ a[1] ^ a[2] ^ a[3]
+//     u = a[0]
+//     a[0] ^= t ^ xtime(a[0] ^ a[1])
+//     a[1] ^= t ^ xtime(a[1] ^ a[2])
+//     a[2] ^= t ^ xtime(a[2] ^ a[3])
+//     a[3] ^= t ^ xtime(a[3] ^ u)
+
+
+void mix_single_column(unsigned char *column) {
+    unsigned char t = column[0] ^ column[1] ^ column[2] ^ column[3];
+    unsigned char u = column[0];
+    column[0] ^= t ^ xtime(column[0] ^ column[1]);
+    column[1] ^= t ^ xtime(column[1] ^ column[2]);
+    column[2] ^= t ^ xtime(column[2] ^ column[3]);
+    column[3] ^= t ^ xtime(column[3] ^ u);
+}
+
+// def mix_columns(s):
+//     for i in range(4):
+//         mix_single_column(s[i])
+
+
+void mix_columns(unsigned char matrix[4][4]) {
   // A linear transformation of the columns of state
+    for (int i = 0; i < 4; ++i) {
+        mix_single_column(matrix[i]);
+    }
 }
 
 /*
