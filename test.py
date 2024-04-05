@@ -1,7 +1,7 @@
 import unittest
 import ctypes
 import os
-from aes.aes import bytes2matrix as p_bytes2matrix, matrix2bytes as p_matrix2bytes, sub_bytes as p_sub_bytes, shift_rows as p_shift_rows 
+from aes.aes import bytes2matrix as p_bytes2matrix, matrix2bytes as p_matrix2bytes, sub_bytes as p_sub_bytes, shift_rows as p_shift_rows, mix_columns as p_mix_columns 
 
 
 
@@ -77,6 +77,21 @@ class TestAes(unittest.TestCase):
                 self.rijndael.shift_rows(c_matrix)
                 p_shift_rows(p_matrix)
                 self.assertEqual(ctypes.string_at(c_matrix,16), p_matrix2bytes(p_matrix))
-                
+    def test_mix_columns(self):
+        for buffer in self.generate_inputs():
+            with self.subTest(buffer=buffer):
+                # Creating a matrix data structure for c_matrix
+                block = ctypes.create_string_buffer(buffer)
+                CMatrixType = (ctypes.c_ubyte * 4) * 4
+                c_matrix = CMatrixType()
+
+                p_matrix = p_bytes2matrix(buffer)
+                self.rijndael.bytes2matrix(block, c_matrix)
+
+                # Call the C shift_rows function
+                self.rijndael.mix_columns(c_matrix)
+                p_mix_columns(p_matrix)
+                self.assertEqual(ctypes.string_at(c_matrix,16), p_matrix2bytes(p_matrix))
+
 if __name__ == "__main__":
     unittest.main()
