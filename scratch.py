@@ -13,14 +13,14 @@ c_matrix = CMatrixType()
 p_matrix = p_bytes2matrix(buffer)
 rijndael.bytes2matrix(block, c_matrix)
 
-temp = c_matrix
-print(ctypes.string_at(temp,16))
+temp = ctypes.string_at(c_matrix,16)
+print(temp)
 # Call the C sub_bytes function
-rijndael.sub_bytes(c_matrix)
-print(ctypes.string_at(temp,16))
-rijndael.invert_sub_bytes(c_matrix)
+rijndael.shift_rows(c_matrix)
+print(ctypes.string_at(c_matrix,16))
+rijndael.invert_shift_rows(c_matrix)
 
 print("C results: ", ctypes.string_at(c_matrix,16))
 
-print(ctypes.string_at(c_matrix,16)==ctypes.string_at(temp,16))
+print(ctypes.string_at(c_matrix,16)==temp)
 
