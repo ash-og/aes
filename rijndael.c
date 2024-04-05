@@ -145,12 +145,21 @@ void mix_columns(unsigned char matrix[4][4]) {
     }
 }
 
+    // for (int i = 0; i < 4; ++i) {
+    //     for (int j = 0; j < 4; ++j) {
+    //         matrix[i][j] = s_box[matrix[i][j]]; // Substitute each byte using the S-box
+    //     }
+    // }
+
+
 /*
  * Operations used when decrypting a block
  */
-void invert_sub_bytes(unsigned char *block) {
-   for (int i = 0; i < 16; ++i) {
-        block[i] = inv_s_box[block[i]];
+void invert_sub_bytes(unsigned char matrix[4][4]) {
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            matrix[i][j] = inv_s_box[matrix[i][j]]; // Substitute each byte using the S-box
+        }
     }
 }
 
