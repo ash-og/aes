@@ -13,14 +13,14 @@ c_matrix = CMatrixType()
 p_matrix = p_bytes2matrix(buffer)
 rijndael.bytes2matrix(block, c_matrix)
 
-print("C matrix: ", ctypes.string_at(c_matrix,16))
+def print_c_matrix(matrix):
+    for row in matrix:
+        print(' '.join(f'{cell:02X}' for cell in row))
 
-# Call the C shift_rows function
+print("C matrix before shift_rows:")
+print_c_matrix(c_matrix)
+
 rijndael.shift_rows(c_matrix)
-p_shift_rows(p_matrix)
 
-print("C results: ", ctypes.string_at(c_matrix,16))
-print("Python results: ", matrix2bytes(p_matrix))
-
-print(ctypes.string_at(c_matrix,16)==matrix2bytes(p_matrix))
-
+print("C matrix after shift_rows:")
+print_c_matrix(c_matrix)
