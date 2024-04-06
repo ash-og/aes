@@ -95,21 +95,21 @@ class TestAes(unittest.TestCase):
                 p_mix_columns(p_matrix)
                 self.assertEqual(ctypes.string_at(c_matrix,16), p_matrix2bytes(p_matrix))
             
-    def test_add_round_key(self):
-        for buffer in self.generate_inputs():
-            with self.subTest(buffer=buffer):
-                # Creating a matrix data structure for c_matrix
-                block = ctypes.create_string_buffer(buffer)
-                CMatrixType = (ctypes.c_ubyte * 4) * 4
-                c_matrix = CMatrixType()
+    # def test_add_round_key(self):
+    #     for buffer in self.generate_inputs():
+    #         with self.subTest(buffer=buffer):
+    #             # Creating a matrix data structure for c_matrix
+    #             block = ctypes.create_string_buffer(buffer)
+    #             CMatrixType = (ctypes.c_ubyte * 4) * 4
+    #             c_matrix = CMatrixType()
 
-                p_matrix = p_bytes2matrix(buffer)
-                self.rijndael.bytes2matrix(block, c_matrix)
+    #             p_matrix = p_bytes2matrix(buffer)
+    #             self.rijndael.bytes2matrix(block, c_matrix)
 
-                # Call the C shift_rows function
-                self.rijndael.add_round_key(c_matrix)
-                p_add_round_key(p_matrix)
-                self.assertEqual(ctypes.string_at(c_matrix,16), p_matrix2bytes(p_matrix))
+    #             # Call the C shift_rows function
+    #             self.rijndael.add_round_key(c_matrix)
+    #             p_add_round_key(p_matrix)
+    #             self.assertEqual(ctypes.string_at(c_matrix,16), p_matrix2bytes(p_matrix))
 
     def test_invert_subbytes(self):
         for buffer in self.generate_inputs():

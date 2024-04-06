@@ -14,7 +14,7 @@
 #include "rijndael.h"
 
 /* aes sbox and invert-sbox */
-static const uint8_t s_box[256] = {
+static const unsigned char s_box[] = {
 /*  0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F  */
     0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
     0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
@@ -34,7 +34,7 @@ static const uint8_t s_box[256] = {
     0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16,
 };
 
-static const uint8_t inv_s_box[256] = {
+static const unsigned char inv_s_box[] = {
 /*  0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F  */
     0x52, 0x09, 0x6A, 0xD5, 0x30, 0x36, 0xA5, 0x38, 0xBF, 0x40, 0xA3, 0x9E, 0x81, 0xF3, 0xD7, 0xFB,
     0x7C, 0xE3, 0x39, 0x82, 0x9B, 0x2F, 0xFF, 0x87, 0x34, 0x8E, 0x43, 0x44, 0xC4, 0xDE, 0xE9, 0xCB,
@@ -52,6 +52,13 @@ static const uint8_t inv_s_box[256] = {
     0x60, 0x51, 0x7F, 0xA9, 0x19, 0xB5, 0x4A, 0x0D, 0x2D, 0xE5, 0x7A, 0x9F, 0x93, 0xC9, 0x9C, 0xEF,
     0xA0, 0xE0, 0x3B, 0x4D, 0xAE, 0x2A, 0xF5, 0xB0, 0xC8, 0xEB, 0xBB, 0x3C, 0x83, 0x53, 0x99, 0x61,
     0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26, 0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D,
+};
+
+static const unsigned char r_con[] = {
+    0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40,
+    0x80, 0x1B, 0x36, 0x6C, 0xD8, 0xAB, 0x4D, 0x9A,
+    0x2F, 0x5E, 0xBC, 0x63, 0xC6, 0x97, 0x35, 0x6A,
+    0xD4, 0xB3, 0x7D, 0xFA, 0xEF, 0xC5, 0x91, 0x39,
 };
 
 // def bytes2matrix(text):
@@ -223,8 +230,67 @@ void add_round_key(unsigned char matrix[4][4], unsigned char *round_key) {
  * which is a single 128-bit key, it should return a 176-byte
  * vector, containing the 11 round keys one after the other
  */
+
+// def _expand_key(self, master_key):
+//         """
+//         Expands and returns a list of key matrices for the given master_key.
+//         """
+//         # Initialize round keys with raw key material.
+//         key_columns = bytes2matrix(master_key)
+//         iteration_size = len(master_key) // 4
+
+//         i = 1
+//         while len(key_columns) < (self.n_rounds + 1) * 4:
+//             # Copy previous word.
+//             word = list(key_columns[-1])
+
+//             # Perform schedule_core once every "row".
+//             if len(key_columns) % iteration_size == 0:
+//                 # Circular shift.
+//                 word.append(word.pop(0))
+//                 # Map to S-BOX.
+//                 word = [s_box[b] for b in word]
+//                 # XOR with first byte of R-CON, since the others bytes of R-CON are 0.
+//                 word[0] ^= r_con[i]
+//                 i += 1
+//             elif len(master_key) == 32 and len(key_columns) % iteration_size == 4:
+//                 # Run word through S-box in the fourth iteration when using a
+//                 # 256-bit key.
+//                 word = [s_box[b] for b in word]
+
+//             # XOR with equivalent word from previous iteration.
+//             word = xor_bytes(word, key_columns[-iteration_size])
+//             key_columns.append(word)
+
+//         # Group key words in 4x4 byte matrices.
+//         return [key_columns[4*i : 4*(i+1)] for i in range(len(key_columns) // 4)]
+
 unsigned char *expand_key(unsigned char *cipher_key) {
-  // TODO: Implement me!
+  // Expands and returns a list of key matrices for the given master_key.
+    unsigned char *key_columns = (unsigned char *)malloc(sizeof(unsigned char) * 16);
+    unsigned char *round_key = (unsigned char *)malloc(sizeof(unsigned char) * 176);
+    unsigned char *word = (unsigned char *)malloc(sizeof(unsigned char) * 4);
+    unsigned char *temp = (unsigned char *)malloc(sizeof(unsigned char) * 4);
+    unsigned char *r_con = (unsigned char *)malloc(sizeof(unsigned char) * 11);
+    unsigned char *key = (unsigned char *)malloc(sizeof(unsigned char) * 16);
+    unsigned char *key_schedule = (unsigned char *)malloc(sizeof(unsigned char) * 176);
+    unsigned char *key_schedule_temp = (unsigned char *)malloc(sizeof(unsigned char) * 176);
+    unsigned char *key_schedule_temp2 = (unsigned char *)malloc(sizeof(unsigned char) * 176);
+    unsigned char *key_schedule_temp3 = (unsigned char *)malloc(sizeof(unsigned char) * 176);
+    unsigned char *key_schedule_temp4 = (unsigned char *)malloc(sizeof(unsigned char) * 176);
+    unsigned char *key_schedule_temp5 = (unsigned char *)malloc(sizeof(unsigned char) * 176);
+    unsigned char *key_schedule_temp6 = (unsigned char *)malloc(sizeof(unsigned char) * 176);
+    unsigned char *key_schedule_temp7 = (unsigned char *)malloc(sizeof(unsigned char) * 176);
+    unsigned char *key_schedule_temp8 = (unsigned char *)malloc(sizeof(unsigned char) * 176);
+    unsigned char *key_schedule_temp9 = (unsigned char *)malloc(sizeof(unsigned char) * 176);
+    unsigned char *key_schedule_temp10 = (unsigned char *)malloc(sizeof(unsigned char) * 176);
+    unsigned char *key_schedule_temp11 = (unsigned char *)malloc(sizeof(unsigned char) * 176);
+    unsigned char *key_schedule_temp12 = (unsigned char *)malloc(sizeof(unsigned char) * 176);
+    unsigned char *key_schedule_temp13 = (unsigned char *)malloc(sizeof(unsigned char) * 176);
+    unsigned char *key_schedule_temp14 = (unsigned char *)malloc(sizeof(unsigned char) * 176);
+    unsigned char *key_schedule_temp15 = (unsigned char *)malloc(sizeof(unsigned char) * 176);
+    unsigned char *key_schedule_temp16 = (unsigned char *)malloc(sizeof(unsigned char) * 176);
+    unsigned char *key_schedule_temp17 = (unsigned char *)malloc(sizeof(unsigned char) * 176);
   return 0;
 }
 
