@@ -230,12 +230,12 @@ unsigned char rotWord(unsigned char word) {
     return result;
 }
 
-unsigned char subWord(unsigned char word) {
-  for (int i = 0; i < 4; ++i) {
-    word[i] = s_box[i];
-  }
-  return word;
-}
+// unsigned char subWord(unsigned char word) {
+//   for (int i = 0; i < 4; ++i) {
+//     word[i] = s_box[i];
+//   }
+//   return word;
+// }
 /*
  * This function should expand the round key. Given an input,
  * which is a single 128-bit key, it should return a 176-byte
@@ -243,7 +243,42 @@ unsigned char subWord(unsigned char word) {
  */
 
 
+// def _expand_key(self, master_key):
+//         """
+//         Expands and returns a list of key matrices for the given master_key.
+//         """
+        // # Initialize round keys with raw key material.
+        // key_columns = bytes2matrix(master_key)
+        // iteration_size = len(master_key) // 4
+
+        // i = 1
+        // while len(key_columns) < (self.n_rounds + 1) * 4:
+        //     # Copy previous word.
+        //     word = list(key_columns[-1])
+
+        //     # Perform schedule_core once every "row".
+        //     if len(key_columns) % iteration_size == 0:
+        //         # Circular shift.
+        //         word.append(word.pop(0))
+        //         # Map to S-BOX.
+        //         word = [s_box[b] for b in word]
+        //         # XOR with first byte of R-CON, since the others bytes of R-CON are 0.
+        //         word[0] ^= r_con[i]
+        //         i += 1
+        //     elif len(master_key) == 32 and len(key_columns) % iteration_size == 4:
+        //         # Run word through S-box in the fourth iteration when using a
+        //         # 256-bit key.
+        //         word = [s_box[b] for b in word]
+
+        //     # XOR with equivalent word from previous iteration.
+        //     word = xor_bytes(word, key_columns[-iteration_size])
+        //     key_columns.append(word)
+
+        // # Group key words in 4x4 byte matrices.
+        // return [key_columns[4*i : 4*(i+1)] for i in range(len(key_columns) // 4)]
+
 unsigned char *expand_key(unsigned char *cipher_key) {
+
   // Expands and returns a list of key matrices for the given master_key.
   // Inspiration drawn from https://github.com/m3y54m/aes-in-c?tab=readme-ov-file#the-key-expansion
 
@@ -251,33 +286,52 @@ unsigned char *expand_key(unsigned char *cipher_key) {
   unsigned char *expandedKey =
       (unsigned char *)malloc(sizeof(unsigned char) * KEY_EXP_SIZE);
 
-    int current_size = 0;
-    int rconIteration = 1;
-    int i;
-    unsigned char word;
+  // Convert the cipher key into a 4x4 matrix
+  unsigned char key_columns[4][4];
+  bytes2matrix(cipher_key, key_columns);
+  int iteration_size = sizeof(cipher_key) / 4;
+  unsigned char word[4] = {0}; 
+  int r_con_i = 1;
 
-    // Copy the initial cipher key into the expanded key
-    for (i = 0; i < BLOCK_SIZE; i++) {
-        expandedKey[i] = cipher_key[i];
+  while (sizeof(key_columns) < KEY_EXP_SIZE) {
+    
+    for (int i = 0; i < 4; ++i) {
+      word[i] = key_columns[-1][i];
     }
 
-    // Key expansion loop
-    while (current_size < KEY_EXP_SIZE) {
+    if (sizeof(key_columns) % iteration_size == 0) {
+      // Circular shift.
+      word[4] = word[0];
+      for (int i = 0; i < 3; ++i) {
+        word[i] = word[i + 1];
+      }
+      // Map to S-BOX.
+      for (int i = 0; i < 4; ++i) {
+        word[i] = s_box[word[i]];
+      }
+      // XOR with first byte of R-CON, since the others bytes of R-CON are 0.
+      word[0] ^= r_con[r_con_i];
+      r_con_i += 1;
+    } 
+        //     # XOR with equivalent word from previous iteration.
+        //     word = xor_bytes(word, key_columns[-iteration_size])
+        //     key_columns.append(word)
+  }
+     
 
-        // Assign the value of the previous four bytes to the temporary value temp
-        word = (expandedKey + current_size - 4);
-
-        // If the current_size is a multiple of the block size, perform a key schedule core operation
-        if (current_size % BLOCK_SIZE == 0) {
-          word = rotWord(word);
-        }
-    }
-
-  return expandedKey;
 
 
-  
-}
+
+        // # Group key words in 4x4 byte matrices.
+        // return [key_columns[4*i : 4*(i+1)] for i in range(len(key_columns) // 4)]
+    return expandedKey;
+  }
+
+ 
+
+ 
+
+
 
 /*
  * The implementations of the functions declared in the
