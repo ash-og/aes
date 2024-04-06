@@ -1,5 +1,5 @@
 import ctypes
-from aes.aes import bytes2matrix as p_bytes2matrix, matrix2bytes, shift_rows as p_shift_rows, mix_columns as p_mix_columns # importing python subbytes
+from aes.aes import bytes2matrix as p_bytes2matrix, matrix2bytes, sub_bytes as p_subbytes, shift_rows as p_shift_rows, mix_columns as p_mix_columns # importing python subbytes
 
 rijndael = ctypes.CDLL('./rijndael.so')
 
@@ -13,12 +13,14 @@ c_matrix = CMatrixType()
 p_matrix = p_bytes2matrix(buffer)
 rijndael.bytes2matrix(block, c_matrix)
 
-# Call the C shift_rows function
-rijndael.mix_columns(c_matrix)
-p_mix_columns(p_matrix)
+temp = ctypes.string_at(c_matrix,16)
+print(temp)
+# Call the C sub_bytes function
+rijndael.shift_rows(c_matrix)
+print(ctypes.string_at(c_matrix,16))
+rijndael.invert_shift_rows(c_matrix)
 
 print("C results: ", ctypes.string_at(c_matrix,16))
-print("Python results: ", matrix2bytes(p_matrix))
 
-print(ctypes.string_at(c_matrix,16)==matrix2bytes(p_matrix))
+print(ctypes.string_at(c_matrix,16)==temp)
 

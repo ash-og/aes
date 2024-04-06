@@ -106,25 +106,13 @@ void shift_rows(unsigned char matrix[4][4]) {
     matrix[1][3] = temp;
 }
 
-
-
-// xtime = lambda a: (((a << 1) ^ 0x1B) & 0xFF) if (a & 0x80) else (a << 1)
-
 unsigned char xtime(unsigned char a) {
-    return (a & 0x80)?((a << 1) ^ 0x1B) & 0xFF:(a << 1);
+  // Create a new byte that is a left shifted version of the input byte, and then XOR it with 0x1B if the most significant bit of the input byte is 1. Otherwise, just return the left shifted version of the input byte.
+    return (a & 0x80)?((a << 1) ^ 0x1B) & 0xFF:(a << 1); 
 }
 
-// def mix_single_column(a):
-//     # see Sec 4.1.2 in The Design of Rijndael
-//     t = a[0] ^ a[1] ^ a[2] ^ a[3]
-//     u = a[0]
-//     a[0] ^= t ^ xtime(a[0] ^ a[1])
-//     a[1] ^= t ^ xtime(a[1] ^ a[2])
-//     a[2] ^= t ^ xtime(a[2] ^ a[3])
-//     a[3] ^= t ^ xtime(a[3] ^ u)
-
-
 void mix_single_column(unsigned char *column) {
+  // Uses xtime to multiply the column by 2, 3, 1, 1
     unsigned char t = column[0] ^ column[1] ^ column[2] ^ column[3];
     unsigned char u = column[0];
     column[0] ^= t ^ xtime(column[0] ^ column[1]);
@@ -148,26 +136,86 @@ void mix_columns(unsigned char matrix[4][4]) {
 /*
  * Operations used when decrypting a block
  */
-void invert_sub_bytes(unsigned char *block) {
-   for (int i = 0; i < 16; ++i) {
-        block[i] = inv_s_box[block[i]];
+void invert_sub_bytes(unsigned char matrix[4][4]) {
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            matrix[i][j] = inv_s_box[matrix[i][j]]; // Substitute each byte using the inverted S-box
+        }
     }
 }
 
-void invert_shift_rows(unsigned char *block) {
-  // TODO: Implement me!
+void invert_shift_rows(unsigned char matrix[4][4]) {
+
+  unsigned char temp;
+
+  // Row 1: right shift by 1 
+  //  s[0][1], s[1][1], s[2][1], s[3][1] = s[3][1], s[0][1], s[1][1], s[2][1]
+  temp = matrix[3][1];
+  matrix[3][1] = matrix[2][1];
+  matrix[2][1] = matrix[1][1];
+  matrix[1][1] = matrix[0][1];
+  matrix[0][1] = temp;
+
+  // Row 2: right shift by 2 
+  // s[0][2], s[1][2], s[2][2], s[3][2] = s[2][2], s[3][2], s[0][2], s[1][2]
+  temp = matrix[0][2];
+  matrix[0][2] = matrix[2][2];
+  matrix[2][2] = temp;
+  temp = matrix[1][2];
+  matrix[1][2] = matrix[3][2];
+  matrix[3][2] = temp;
+
+  // Row 3: right shift by 3 
+  // s[0][3], s[1][3], s[2][3], s[3][3] = s[1][3], s[2][3], s[3][3], s[0][3]
+  temp = matrix[1][3];
+  matrix[1][3] = matrix[2][3];
+  matrix[2][3] = matrix[3][3];
+  matrix[3][3] = matrix[0][3];
+  matrix[0][3] = temp;
 }
 
-void invert_mix_columns(unsigned char *block) {
-  // TODO: Implement me!
+
+// def inv_mix_columns(s):
+//     # see Sec 4.1.3 in The Design of Rijndael
+//     for i in range(4):
+//         u = xtime(xtime(s[i][0] ^ s[i][2]))
+//         v = xtime(xtime(s[i][1] ^ s[i][3]))
+//         s[i][0] ^= u
+//         s[i][1] ^= v
+//         s[i][2] ^= u
+//         s[i][3] ^= v
+
+//     mix_columns(s)
+
+void invert_mix_columns(unsigned char matrix[4][4]) {
+  // A linear transformation of the columns of state
+    for (int i = 0; i < 4; ++i) {
+        unsigned char u = xtime(xtime(matrix[i][0] ^ matrix[i][2]));
+        unsigned char v = xtime(xtime(matrix[i][1] ^ matrix[i][3]));
+        matrix[i][0] ^= u;
+        matrix[i][1] ^= v;
+        matrix[i][2] ^= u;
+        matrix[i][3] ^= v;
+    }
+    mix_columns(matrix);
+
 }
+
+// def add_round_key(s, k):
+//     for i in range(4):
+//         for j in range(4):
+//             s[i][j] ^= k[i][j]
 
 /*
  * This operation is shared between encryption and decryption
  */
-void add_round_key(unsigned char *block, unsigned char *round_key) {
-  // TODO: Implement me!
+void add_round_key(unsigned char matrix[4][4], unsigned char *round_key) {
   // Each byte of the state is combined with a round key, which is a different key for each round and derived from the Rijndael key schedule
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            matrix[i][j] ^= round_key[i * 4 + j];
+        }
+    }
 }
 
 /*
