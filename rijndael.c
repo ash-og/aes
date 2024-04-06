@@ -175,16 +175,47 @@ void invert_shift_rows(unsigned char matrix[4][4]) {
 }
 
 
+// def inv_mix_columns(s):
+//     # see Sec 4.1.3 in The Design of Rijndael
+//     for i in range(4):
+//         u = xtime(xtime(s[i][0] ^ s[i][2]))
+//         v = xtime(xtime(s[i][1] ^ s[i][3]))
+//         s[i][0] ^= u
+//         s[i][1] ^= v
+//         s[i][2] ^= u
+//         s[i][3] ^= v
+
+//     mix_columns(s)
+
 void invert_mix_columns(unsigned char matrix[4][4]) {
-  // TODO: Implement me!
+  // A linear transformation of the columns of state
+    for (int i = 0; i < 4; ++i) {
+        unsigned char u = xtime(xtime(matrix[i][0] ^ matrix[i][2]));
+        unsigned char v = xtime(xtime(matrix[i][1] ^ matrix[i][3]));
+        matrix[i][0] ^= u;
+        matrix[i][1] ^= v;
+        matrix[i][2] ^= u;
+        matrix[i][3] ^= v;
+    }
+    mix_columns(matrix);
+
 }
+
+// def add_round_key(s, k):
+//     for i in range(4):
+//         for j in range(4):
+//             s[i][j] ^= k[i][j]
 
 /*
  * This operation is shared between encryption and decryption
  */
-void add_round_key(unsigned char *block, unsigned char *round_key) {
-  // TODO: Implement me!
+void add_round_key(unsigned char matrix[4][4], unsigned char *round_key) {
   // Each byte of the state is combined with a round key, which is a different key for each round and derived from the Rijndael key schedule
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            matrix[i][j] ^= round_key[i * 4 + j];
+        }
+    }
 }
 
 /*
