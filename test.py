@@ -1,7 +1,8 @@
 import unittest
 import ctypes
 import os
-from aes.aes import bytes2matrix as p_bytes2matrix, matrix2bytes as p_matrix2bytes, sub_bytes as p_sub_bytes, shift_rows as p_shift_rows, mix_columns as p_mix_columns, inv_sub_bytes as p_inv_sub_bytes, inv_shift_rows as p_inv_shift_rows, inv_mix_columns as p_inv_mix_columns, add_round_key as p_add_round_key
+import secrets
+from aes.aes import bytes2matrix as p_bytes2matrix, matrix2bytes as p_matrix2bytes, sub_bytes as p_sub_bytes, shift_rows as p_shift_rows, mix_columns as p_mix_columns, inv_sub_bytes as p_inv_sub_bytes, inv_shift_rows as p_inv_shift_rows, inv_mix_columns as p_inv_mix_columns, add_round_key as p_add_round_key, AES
 
 
 
@@ -9,15 +10,13 @@ class TestAes(unittest.TestCase):
     def setUp(self):
         # Load the shared library
         self.rijndael = ctypes.CDLL('./rijndael.so')
+        # prepare they keys
+        self.keys = [secrets.token_bytes(16) for i in range(3)]
 
         # Prepare the inputs
     def generate_inputs(self):
         """Generate 3 random inputs for testing."""
         return [os.urandom(16) for i in range(3)]
-        
-        # self.buffer = b'\x00\x01\x02\x03\x04\x05\x06\x07'
-        # self.buffer += b'\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F'
-        # self.block = ctypes.create_string_buffer(self.buffer)
 
     def test_bytes2matrix(self):
         for buffer in self.generate_inputs():
@@ -94,6 +93,31 @@ class TestAes(unittest.TestCase):
                 self.rijndael.mix_columns(c_matrix)
                 p_mix_columns(p_matrix)
                 self.assertEqual(ctypes.string_at(c_matrix,16), p_matrix2bytes(p_matrix))
+    def test_expand_keys(self):
+        for key in self.keys:
+            with self.subTest(key=key):
+                # Define the argument and return types for the expand_key function
+                self.rijndael.expand_key.argtypes = [ctypes.POINTER(ctypes.c_ubyte)]
+                self.rijndael.expand_key.restype = ctypes.POINTER(ctypes.c_ubyte)
+
+                c_key = (ctypes.c_ubyte * len(key))(*key)
+                expanded_key = self.rijndael.expand_key(c_key)
+
+                p_AES = AES(key)
+                p_expanded_key_matrices = p_AES._key_matrices
+                def matrices2bytes(matrices):
+                    """ Converts a list of 4x4 matrices into a concatenated byte array. """
+                    # Flatten each matrix to a single list of bytes, then concatenate
+                    flattened_array = []
+                    for matrix in matrices:
+                        for row in matrix:
+                            flattened_array.extend(row)
+                    return bytes(flattened_array)
+                
+                python_expanded_key_bytes = matrices2bytes(p_expanded_key_matrices)
+                self.assertEqual(ctypes.string_at(expanded_key, 176), python_expanded_key_bytes)
+                
+                self.rijndael.free_memory(expanded_key)
             
     # def test_add_round_key(self):
     #     for buffer in self.generate_inputs():
