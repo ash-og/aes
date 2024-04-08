@@ -159,7 +159,7 @@ class TestAes(unittest.TestCase):
                 p_mix_columns(p_matrix)
                 p_inv_mix_columns(p_matrix)
                 self.assertEqual(ctypes.string_at(c_matrix,16), p_matrix2bytes(p_matrix))
-    def test_encryption(self):
+    def test_encryption_decryption(self):
         for key in self.keys:
             for buffer in self.generate_inputs():
                 with self.subTest(buffer=buffer):
@@ -172,6 +172,15 @@ class TestAes(unittest.TestCase):
                     p_AES = AES(key)
                     p_encrypted = p_AES.encrypt_block(bytes(buffer))
                     self.assertEqual(c_encrypted, p_encrypted)
+
+                    self.rijndael.aes_decrypt_block.argtypes = [ctypes.POINTER(ctypes.c_ubyte), ctypes.POINTER(ctypes.c_ubyte)]
+                    self.rijndael.aes_decrypt_block.restype = ctypes.POINTER(ctypes.c_ubyte)
+                    ciphertext = (ctypes.c_ubyte * 16)(*c_encrypted)
+                    c_decrypted_ptr = self.rijndael.aes_decrypt_block(ciphertext, c_key)
+                    c_decrypted = ctypes.string_at(c_decrypted_ptr, 16)
+                    self.rijndael.free_memory(c_decrypted_ptr)
+                    p_decrypted = p_AES.decrypt_block(p_encrypted)
+                    self.assertEqual(c_decrypted, p_decrypted)
 
 if __name__ == "__main__":
     unittest.main()

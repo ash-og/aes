@@ -263,28 +263,6 @@ unsigned char *expand_key(unsigned char *cipher_key) {
  * header file should go here
  */
 
-    // def encrypt_block(self, plaintext):
-    //     """
-    //     Encrypts a single block of 16 byte long plaintext.
-    //     """
-    //     assert len(plaintext) == 16
-
-    //     plain_state = bytes2matrix(plaintext)
-
-    //     add_round_key(plain_state, self._key_matrices[0])
-
-    //     for i in range(1, self.n_rounds):
-    //         sub_bytes(plain_state)
-    //         shift_rows(plain_state)
-    //         mix_columns(plain_state)
-    //         add_round_key(plain_state, self._key_matrices[i])
-
-    //     sub_bytes(plain_state)
-    //     shift_rows(plain_state)
-    //     add_round_key(plain_state, self._key_matrices[-1])
-
-    //     return matrix2bytes(plain_state)
-
 unsigned char *aes_encrypt_block(unsigned char *plaintext, unsigned char *key) {
   // TODO: Implement me!
   unsigned char *output =
@@ -309,11 +287,50 @@ unsigned char *aes_encrypt_block(unsigned char *plaintext, unsigned char *key) {
   return output;
 }
 
+// def decrypt_block(self, ciphertext):
+//         """
+//         Decrypts a single block of 16 byte long ciphertext.
+//         """
+//         assert len(ciphertext) == 16
+
+//         cipher_state = bytes2matrix(ciphertext)
+
+//         add_round_key(cipher_state, self._key_matrices[-1])
+//         inv_shift_rows(cipher_state)
+//         inv_sub_bytes(cipher_state)
+
+//         for i in range(self.n_rounds - 1, 0, -1):
+//             add_round_key(cipher_state, self._key_matrices[i])
+//             inv_mix_columns(cipher_state)
+//             inv_shift_rows(cipher_state)
+//             inv_sub_bytes(cipher_state)
+
+//         add_round_key(cipher_state, self._key_matrices[0])
+
+//         return matrix2bytes(cipher_state)
+
 unsigned char *aes_decrypt_block(unsigned char *ciphertext,
                                  unsigned char *key) {
   // TODO: Implement me!
   unsigned char *output =
       (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
+  
+  unsigned char *expanded_key = expand_key(key);
+  unsigned char matrix[4][4];
+  bytes2matrix(ciphertext, matrix);
+  add_round_key(matrix, expanded_key + 160);
+  invert_shift_rows(matrix);
+  invert_sub_bytes(matrix);
+  for (int i = 9; i > 0; i--) {
+      add_round_key(matrix, expanded_key + i * 16);
+      invert_mix_columns(matrix);
+      invert_shift_rows(matrix);
+      invert_sub_bytes(matrix);
+  }
+  add_round_key(matrix, expanded_key);
+  free_memory(expanded_key);
+
+  matrix2bytes(matrix, output);
   return output;
 }
 
