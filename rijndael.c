@@ -61,14 +61,6 @@ static const unsigned char r_con[] = {
     0xD4, 0xB3, 0x7D, 0xFA, 0xEF, 0xC5, 0x91, 0x39,
 };
 
-// def bytes2matrix(text):
-//     """ Converts a 16-byte array into a 4x4 matrix.  """
-//     return [list(text[i:i+4]) for i in range(0, len(text), 4)]
-
-// def matrix2bytes(matrix):
-//     """ Converts a 4x4 matrix into a 16-byte array.  """
-//     return bytes(sum(matrix, []))
-
 void bytes2matrix(unsigned char *block, unsigned char matrix[4][4]) {
     for (int i = 0; i < 16; ++i) {
         matrix[i / 4][i % 4] = block[i];
@@ -128,10 +120,6 @@ void mix_single_column(unsigned char *column) {
     column[3] ^= t ^ xtime(column[3] ^ u);
 }
 
-// def mix_columns(s):
-//     for i in range(4):
-//         mix_single_column(s[i])
-
 
 void mix_columns(unsigned char matrix[4][4]) {
   // A linear transformation of the columns of state
@@ -181,19 +169,6 @@ void invert_shift_rows(unsigned char matrix[4][4]) {
   matrix[0][3] = temp;
 }
 
-
-// def inv_mix_columns(s):
-//     # see Sec 4.1.3 in The Design of Rijndael
-//     for i in range(4):
-//         u = xtime(xtime(s[i][0] ^ s[i][2]))
-//         v = xtime(xtime(s[i][1] ^ s[i][3]))
-//         s[i][0] ^= u
-//         s[i][1] ^= v
-//         s[i][2] ^= u
-//         s[i][3] ^= v
-
-//     mix_columns(s)
-
 void invert_mix_columns(unsigned char matrix[4][4]) {
   // A linear transformation of the columns of state
     for (int i = 0; i < 4; ++i) {
@@ -208,10 +183,6 @@ void invert_mix_columns(unsigned char matrix[4][4]) {
 
 }
 
-// def add_round_key(s, k):
-//     for i in range(4):
-//         for j in range(4):
-//             s[i][j] ^= k[i][j]
 
 /*
  * This operation is shared between encryption and decryption
@@ -225,17 +196,7 @@ void add_round_key(unsigned char matrix[4][4], unsigned char *round_key) {
     }
 }
 
-unsigned char rotWord(unsigned char word) {
-    unsigned char result = (word << 8) | (word >> 24);
-    return result;
-}
 
-// unsigned char subWord(unsigned char word) {
-//   for (int i = 0; i < 4; ++i) {
-//     word[i] = s_box[i];
-//   }
-//   return word;
-// }
 /*
  * This function should expand the round key. Given an input,
  * which is a single 128-bit key, it should return a 176-byte
@@ -276,6 +237,10 @@ unsigned char rotWord(unsigned char word) {
 
         // # Group key words in 4x4 byte matrices.
         // return [key_columns[4*i : 4*(i+1)] for i in range(len(key_columns) // 4)]
+void free_memory(unsigned char *key) {
+  // Free the memory allocated for the key
+  free(key);
+}
 
 unsigned char *expand_key(unsigned char *cipher_key) {
 
@@ -286,46 +251,39 @@ unsigned char *expand_key(unsigned char *cipher_key) {
   unsigned char *expandedKey =
       (unsigned char *)malloc(sizeof(unsigned char) * KEY_EXP_SIZE);
 
-  // Convert the cipher key into a 4x4 matrix
-  unsigned char key_columns[4][4];
-  bytes2matrix(cipher_key, key_columns);
-  int iteration_size = sizeof(cipher_key) / 4;
-  unsigned char word[4] = {0}; 
+  memcpy(expandedKey, cipher_key, 16);
+
+  int current_size = 16;
+  unsigned char word[4]; 
   int r_con_i = 1;
+  int key_len = 16;
 
-  while (sizeof(key_columns) < KEY_EXP_SIZE) {
-    
-    for (int i = 0; i < 4; ++i) {
-      word[i] = key_columns[-1][i];
+   while (current_size < KEY_EXP_SIZE) {
+        // Read the last word
+        memcpy(word, &expandedKey[current_size - 4], 4);
+
+        if (current_size % key_len == 0) {
+            // Perform schedule_core (circular shift, s-box sub_bytes, rcon)
+            unsigned char t = word[0];
+            word[0] = word[1];
+            word[1] = word[2];
+            word[2] = word[3];
+            word[3] = t;
+
+            for (int i = 0; i < 4; i++) {
+                word[i] = s_box[word[i]];
+            }
+
+            word[0] ^= r_con[r_con_i++];
+        }
+        // xor word with the word 16 bytes before it
+        for (unsigned int i = 0; i < 4; i++) {
+            expandedKey[current_size] = expandedKey[current_size - key_len] ^ word[i];
+            current_size++;
+        }
     }
-
-    if (sizeof(key_columns) % iteration_size == 0) {
-      // Circular shift.
-      word[4] = word[0];
-      for (int i = 0; i < 3; ++i) {
-        word[i] = word[i + 1];
-      }
-      // Map to S-BOX.
-      for (int i = 0; i < 4; ++i) {
-        word[i] = s_box[word[i]];
-      }
-      // XOR with first byte of R-CON, since the others bytes of R-CON are 0.
-      word[0] ^= r_con[r_con_i];
-      r_con_i += 1;
-    } 
-        //     # XOR with equivalent word from previous iteration.
-        //     word = xor_bytes(word, key_columns[-iteration_size])
-        //     key_columns.append(word)
-  }
-     
-
-
-
-
-        // # Group key words in 4x4 byte matrices.
-        // return [key_columns[4*i : 4*(i+1)] for i in range(len(key_columns) // 4)]
     return expandedKey;
-  }
+}
 
  
 

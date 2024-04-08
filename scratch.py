@@ -1,21 +1,32 @@
 import ctypes
-from aes.aes import bytes2matrix as p_bytes2matrix, matrix2bytes, sub_bytes as p_subbytes, shift_rows as p_shift_rows, mix_columns as p_mix_columns # importing python subbytes
+import secrets
+from aes.aes import bytes2matrix as p_bytes2matrix, matrix2bytes, AES
 
 rijndael = ctypes.CDLL('./rijndael.so')
 
-buffer = b'\x00\x01\x02\x03\x04\x05\x06\x07'
-buffer += b'\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F'
-block = ctypes.create_string_buffer(buffer)
+key = secrets.token_bytes(16)
+c_key = (ctypes.c_ubyte * len(key))(*key)
 
-CMatrixType = (ctypes.c_ubyte * 4) * 4  # Defines a 4x4 matrix of unsigned bytes
-c_matrix = CMatrixType()
+# Define the argument and return types for the expand_key function
+rijndael.expand_key.argtypes = [ctypes.POINTER(ctypes.c_ubyte)]
+rijndael.expand_key.restype = ctypes.POINTER(ctypes.c_ubyte)
 
-p_matrix = p_bytes2matrix(buffer)
-rijndael.bytes2matrix(block, c_matrix)
+expanded_key = rijndael.expand_key(c_key)
+print("C results: ", ctypes.string_at(expanded_key, 176))
 
-rijndael.expand_key_test(block)
+p_AES = AES(key)
+p_expanded_key_matrices = p_AES._key_matrices
 
-# print("C results: ", ctypes.string_at(c_matrix,16))
+def matrices2bytes(matrices):
+    """ Converts a list of 4x4 matrices into a concatenated byte array. """
+    return bytes(sum([sum(matrix, []) for matrix in matrices], []))
 
-# print(ctypes.string_at(c_matrix,16)==temp)
+p_expanded_key_matrices.pop(0)
+print("Python results: ", p_expanded_key_matrices)
+python_expanded_key_bytes = matrices2bytes(p_expanded_key_matrices)
 
+print("Python results: ", python_expanded_key_bytes)
+
+print(ctypes.string_at(expanded_key, 176)==python_expanded_key_bytes)
+
+rijndael.free_memory(expanded_key)
