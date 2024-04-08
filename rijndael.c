@@ -14,7 +14,7 @@
 #include "rijndael.h"
 
 /* aes sbox and invert-sbox */
-static const uint8_t s_box[256] = {
+static const unsigned char s_box[] = {
 /*  0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F  */
     0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
     0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
@@ -34,7 +34,7 @@ static const uint8_t s_box[256] = {
     0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16,
 };
 
-static const uint8_t inv_s_box[256] = {
+static const unsigned char inv_s_box[] = {
 /*  0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F  */
     0x52, 0x09, 0x6A, 0xD5, 0x30, 0x36, 0xA5, 0x38, 0xBF, 0x40, 0xA3, 0x9E, 0x81, 0xF3, 0xD7, 0xFB,
     0x7C, 0xE3, 0x39, 0x82, 0x9B, 0x2F, 0xFF, 0x87, 0x34, 0x8E, 0x43, 0x44, 0xC4, 0xDE, 0xE9, 0xCB,
@@ -54,13 +54,12 @@ static const uint8_t inv_s_box[256] = {
     0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26, 0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D,
 };
 
-// def bytes2matrix(text):
-//     """ Converts a 16-byte array into a 4x4 matrix.  """
-//     return [list(text[i:i+4]) for i in range(0, len(text), 4)]
-
-// def matrix2bytes(matrix):
-//     """ Converts a 4x4 matrix into a 16-byte array.  """
-//     return bytes(sum(matrix, []))
+static const unsigned char r_con[] = {
+    0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40,
+    0x80, 0x1B, 0x36, 0x6C, 0xD8, 0xAB, 0x4D, 0x9A,
+    0x2F, 0x5E, 0xBC, 0x63, 0xC6, 0x97, 0x35, 0x6A,
+    0xD4, 0xB3, 0x7D, 0xFA, 0xEF, 0xC5, 0x91, 0x39,
+};
 
 void bytes2matrix(unsigned char *block, unsigned char matrix[4][4]) {
     for (int i = 0; i < 16; ++i) {
@@ -121,10 +120,6 @@ void mix_single_column(unsigned char *column) {
     column[3] ^= t ^ xtime(column[3] ^ u);
 }
 
-// def mix_columns(s):
-//     for i in range(4):
-//         mix_single_column(s[i])
-
 
 void mix_columns(unsigned char matrix[4][4]) {
   // A linear transformation of the columns of state
@@ -174,19 +169,6 @@ void invert_shift_rows(unsigned char matrix[4][4]) {
   matrix[0][3] = temp;
 }
 
-
-// def inv_mix_columns(s):
-//     # see Sec 4.1.3 in The Design of Rijndael
-//     for i in range(4):
-//         u = xtime(xtime(s[i][0] ^ s[i][2]))
-//         v = xtime(xtime(s[i][1] ^ s[i][3]))
-//         s[i][0] ^= u
-//         s[i][1] ^= v
-//         s[i][2] ^= u
-//         s[i][3] ^= v
-
-//     mix_columns(s)
-
 void invert_mix_columns(unsigned char matrix[4][4]) {
   // A linear transformation of the columns of state
     for (int i = 0; i < 4; ++i) {
@@ -201,10 +183,6 @@ void invert_mix_columns(unsigned char matrix[4][4]) {
 
 }
 
-// def add_round_key(s, k):
-//     for i in range(4):
-//         for j in range(4):
-//             s[i][j] ^= k[i][j]
 
 /*
  * This operation is shared between encryption and decryption
@@ -218,14 +196,59 @@ void add_round_key(unsigned char matrix[4][4], unsigned char *round_key) {
     }
 }
 
+
 /*
  * This function should expand the round key. Given an input,
  * which is a single 128-bit key, it should return a 176-byte
  * vector, containing the 11 round keys one after the other
  */
+
+
+void free_memory(unsigned char *key) {
+  // Free the memory allocated for the key
+  free(key);
+}
+
 unsigned char *expand_key(unsigned char *cipher_key) {
-  // TODO: Implement me!
-  return 0;
+
+  // Expands and returns a list of key matrices for the given master_key.
+  
+  // Allocating the 176 bytes required for the AES-128 expanded key.
+  unsigned char *expandedKey =
+      (unsigned char *)malloc(sizeof(unsigned char) * KEY_EXP_SIZE);
+
+  memcpy(expandedKey, cipher_key, 16);
+
+  int current_size = 16;
+  unsigned char word[4]; 
+  int r_con_i = 1;
+  int key_len = 16;
+
+   while (current_size < KEY_EXP_SIZE) {
+        // Read the last word
+        memcpy(word, &expandedKey[current_size - 4], 4);
+
+        if (current_size % key_len == 0) {
+            // Perform schedule_core (circular shift, s-box sub_bytes, rcon)
+            unsigned char t = word[0];
+            word[0] = word[1];
+            word[1] = word[2];
+            word[2] = word[3];
+            word[3] = t;
+
+            for (int i = 0; i < 4; i++) {
+                word[i] = s_box[word[i]];
+            }
+
+            word[0] ^= r_con[r_con_i++];
+        }
+        // xor word with the word 16 bytes before it
+        for (unsigned int i = 0; i < 4; i++) {
+            expandedKey[current_size] = expandedKey[current_size - key_len] ^ word[i];
+            current_size++;
+        }
+    }
+    return expandedKey;
 }
 
 /*
