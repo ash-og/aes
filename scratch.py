@@ -19,10 +19,14 @@ p_expanded_key_matrices = p_AES._key_matrices
 
 def matrices2bytes(matrices):
     """ Converts a list of 4x4 matrices into a concatenated byte array. """
-    return bytes(sum([sum(matrix, []) for matrix in matrices], []))
+    # Flatten each matrix to a single list of bytes, then concatenate
+    flattened_array = []
+    for matrix in matrices:
+        for row in matrix:
+            flattened_array.extend(row)
+    return bytes(flattened_array)
 
-p_expanded_key_matrices.pop(0)
-print("Python results: ", p_expanded_key_matrices)
+# print("Python results: ", p_expanded_key_matrices)
 python_expanded_key_bytes = matrices2bytes(p_expanded_key_matrices)
 
 print("Python results: ", python_expanded_key_bytes)
