@@ -61,14 +61,6 @@ static const unsigned char r_con[] = {
     0xD4, 0xB3, 0x7D, 0xFA, 0xEF, 0xC5, 0x91, 0x39,
 };
 
-// def bytes2matrix(text):
-//     """ Converts a 16-byte array into a 4x4 matrix.  """
-//     return [list(text[i:i+4]) for i in range(0, len(text), 4)]
-
-// def matrix2bytes(matrix):
-//     """ Converts a 4x4 matrix into a 16-byte array.  """
-//     return bytes(sum(matrix, []))
-
 void bytes2matrix(unsigned char *block, unsigned char matrix[4][4]) {
     for (int i = 0; i < 16; ++i) {
         matrix[i / 4][i % 4] = block[i];
@@ -128,10 +120,6 @@ void mix_single_column(unsigned char *column) {
     column[3] ^= t ^ xtime(column[3] ^ u);
 }
 
-// def mix_columns(s):
-//     for i in range(4):
-//         mix_single_column(s[i])
-
 
 void mix_columns(unsigned char matrix[4][4]) {
   // A linear transformation of the columns of state
@@ -181,19 +169,6 @@ void invert_shift_rows(unsigned char matrix[4][4]) {
   matrix[0][3] = temp;
 }
 
-
-// def inv_mix_columns(s):
-//     # see Sec 4.1.3 in The Design of Rijndael
-//     for i in range(4):
-//         u = xtime(xtime(s[i][0] ^ s[i][2]))
-//         v = xtime(xtime(s[i][1] ^ s[i][3]))
-//         s[i][0] ^= u
-//         s[i][1] ^= v
-//         s[i][2] ^= u
-//         s[i][3] ^= v
-
-//     mix_columns(s)
-
 void invert_mix_columns(unsigned char matrix[4][4]) {
   // A linear transformation of the columns of state
     for (int i = 0; i < 4; ++i) {
@@ -208,10 +183,6 @@ void invert_mix_columns(unsigned char matrix[4][4]) {
 
 }
 
-// def add_round_key(s, k):
-//     for i in range(4):
-//         for j in range(4):
-//             s[i][j] ^= k[i][j]
 
 /*
  * This operation is shared between encryption and decryption
@@ -225,17 +196,7 @@ void add_round_key(unsigned char matrix[4][4], unsigned char *round_key) {
     }
 }
 
-unsigned char rotWord(unsigned char word) {
-    unsigned char result = (word << 8) | (word >> 24);
-    return result;
-}
 
-unsigned char subWord(unsigned char word) {
-  for (int i = 0; i < 4; ++i) {
-    word[i] = s_box[i];
-  }
-  return word;
-}
 /*
  * This function should expand the round key. Given an input,
  * which is a single 128-bit key, it should return a 176-byte
@@ -243,40 +204,51 @@ unsigned char subWord(unsigned char word) {
  */
 
 
-unsigned char *expand_key(unsigned char *cipher_key) {
-  // Expands and returns a list of key matrices for the given master_key.
-  // Inspiration drawn from https://github.com/m3y54m/aes-in-c?tab=readme-ov-file#the-key-expansion
+void free_memory(unsigned char *key) {
+  // Free the memory allocated for the key
+  free(key);
+}
 
+unsigned char *expand_key(unsigned char *cipher_key) {
+
+  // Expands and returns a list of key matrices for the given master_key.
+  
   // Allocating the 176 bytes required for the AES-128 expanded key.
   unsigned char *expandedKey =
       (unsigned char *)malloc(sizeof(unsigned char) * KEY_EXP_SIZE);
 
-    int current_size = 0;
-    int rconIteration = 1;
-    int i;
-    unsigned char word;
+  memcpy(expandedKey, cipher_key, 16);
 
-    // Copy the initial cipher key into the expanded key
-    for (i = 0; i < BLOCK_SIZE; i++) {
-        expandedKey[i] = cipher_key[i];
-    }
+  int current_size = 16;
+  unsigned char word[4]; 
+  int r_con_i = 1;
+  int key_len = 16;
 
-    // Key expansion loop
-    while (current_size < KEY_EXP_SIZE) {
+   while (current_size < KEY_EXP_SIZE) {
+        // Read the last word
+        memcpy(word, &expandedKey[current_size - 4], 4);
 
-        // Assign the value of the previous four bytes to the temporary value temp
-        word = (expandedKey + current_size - 4);
+        if (current_size % key_len == 0) {
+            // Perform schedule_core (circular shift, s-box sub_bytes, rcon)
+            unsigned char t = word[0];
+            word[0] = word[1];
+            word[1] = word[2];
+            word[2] = word[3];
+            word[3] = t;
 
-        // If the current_size is a multiple of the block size, perform a key schedule core operation
-        if (current_size % BLOCK_SIZE == 0) {
-          word = rotWord(word);
+            for (int i = 0; i < 4; i++) {
+                word[i] = s_box[word[i]];
+            }
+
+            word[0] ^= r_con[r_con_i++];
+        }
+        // xor word with the word 16 bytes before it
+        for (unsigned int i = 0; i < 4; i++) {
+            expandedKey[current_size] = expandedKey[current_size - key_len] ^ word[i];
+            current_size++;
         }
     }
-
-  return expandedKey;
-
-
-  
+    return expandedKey;
 }
 
 /*
