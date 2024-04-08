@@ -12,11 +12,24 @@ class TestAes(unittest.TestCase):
         self.rijndael = ctypes.CDLL('./rijndael.so')
         # prepare they keys
         self.keys = [secrets.token_bytes(16) for i in range(3)]
+        # self.buffers = [os.urandom(16) for i in range(3)] 
+        # self.blocks = [ctypes.create_string_buffer(buffer) for buffer in self.buffers]
 
         # Prepare the inputs
     def generate_inputs(self):
         """Generate 3 random inputs for testing."""
         return [os.urandom(16) for i in range(3)]
+    
+    def create_matrices(self, buffer):
+        """Convert a buffer to a 4x4 matrix."""
+        block = ctypes.create_string_buffer(buffer)
+        CMatrixType = (ctypes.c_ubyte * 4) * 4
+        c_matrix = CMatrixType()
+
+        # Call the bytes2matrix function
+        p_matrix = p_bytes2matrix(buffer)
+        self.rijndael.bytes2matrix(block, c_matrix)
+        return c_matrix, p_matrix
 
     def test_bytes2matrix(self):
         for buffer in self.generate_inputs():
@@ -42,20 +55,14 @@ class TestAes(unittest.TestCase):
                 # Compare matrices
                 p_matrix_string = create_mx_str(p_matrix)
                 c_matrix_string = create_mx_str(c_matrix)
-                #print(p_matrix_string)
-                #print(c_matrix_string)
+
                 self.assertEqual(p_matrix_string, c_matrix_string)
 
     def test_sub_bytes(self):
         for buffer in self.generate_inputs():
             with self.subTest(buffer=buffer):
-                # Creating a matrix data structure for c_matrix
-                block = ctypes.create_string_buffer(buffer)        
-                CMatrixType = (ctypes.c_ubyte * 4) * 4  # Defines a 4x4 matrix of unsigned bytes
-                c_matrix = CMatrixType()
-
-                p_matrix = p_bytes2matrix(buffer)
-                self.rijndael.bytes2matrix(block, c_matrix)
+                # Creating a matrices for c_matrix, p_matrix
+                c_matrix, p_matrix = self.create_matrices(buffer)
 
                 # Call the C sub_bytes function
                 self.rijndael.sub_bytes(c_matrix)
@@ -65,13 +72,8 @@ class TestAes(unittest.TestCase):
     def test_shift_rows(self):
         for buffer in self.generate_inputs():
             with self.subTest(buffer=buffer):
-                # Creating a matrix data structure for c_matrix
-                block = ctypes.create_string_buffer(buffer)
-                CMatrixType = (ctypes.c_ubyte * 4) * 4
-                c_matrix = CMatrixType()
-
-                p_matrix = p_bytes2matrix(buffer)
-                self.rijndael.bytes2matrix(block, c_matrix)
+                # Creating a matrices for c_matrix, p_matrix
+                c_matrix, p_matrix = self.create_matrices(buffer)
 
                 # Call the C shift_rows function
                 self.rijndael.shift_rows(c_matrix)
@@ -81,19 +83,15 @@ class TestAes(unittest.TestCase):
     def test_mix_columns(self):
         for buffer in self.generate_inputs():
             with self.subTest(buffer=buffer):
-                # Creating a matrix data structure for c_matrix
-                block = ctypes.create_string_buffer(buffer)
-                CMatrixType = (ctypes.c_ubyte * 4) * 4
-                c_matrix = CMatrixType()
-
-                p_matrix = p_bytes2matrix(buffer)
-                self.rijndael.bytes2matrix(block, c_matrix)
+                # Creating a matrices for c_matrix, p_matrix
+                c_matrix, p_matrix = self.create_matrices(buffer)
 
                 # Call the C shift_rows function
                 self.rijndael.mix_columns(c_matrix)
                 p_mix_columns(p_matrix)
                 self.assertEqual(ctypes.string_at(c_matrix,16), p_matrix2bytes(p_matrix))
-    def test_expand_keys(self):
+
+    def test_expand_add_round_keys(self):
         for key in self.keys:
             with self.subTest(key=key):
                 # Define the argument and return types for the expand_key function
@@ -116,35 +114,21 @@ class TestAes(unittest.TestCase):
                 
                 python_expanded_key_bytes = matrices2bytes(p_expanded_key_matrices)
                 self.assertEqual(ctypes.string_at(expanded_key, 176), python_expanded_key_bytes)
+
+                buffer = b'\x00\x01\x02\x03\x04\x05\x06\x07'
+                buffer += b'\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F'
+                c_matrix, p_matrix = self.create_matrices(buffer)
+                self.rijndael.add_round_key(c_matrix, expanded_key)
+                p_add_round_key(p_matrix, p_expanded_key_matrices[0])
                 
+                self.assertEqual(ctypes.string_at(c_matrix,16), p_matrix2bytes(p_matrix))
                 self.rijndael.free_memory(expanded_key)
-            
-    # def test_add_round_key(self):
-    #     for buffer in self.generate_inputs():
-    #         with self.subTest(buffer=buffer):
-    #             # Creating a matrix data structure for c_matrix
-    #             block = ctypes.create_string_buffer(buffer)
-    #             CMatrixType = (ctypes.c_ubyte * 4) * 4
-    #             c_matrix = CMatrixType()
-
-    #             p_matrix = p_bytes2matrix(buffer)
-    #             self.rijndael.bytes2matrix(block, c_matrix)
-
-    #             # Call the C shift_rows function
-    #             self.rijndael.add_round_key(c_matrix)
-    #             p_add_round_key(p_matrix)
-    #             self.assertEqual(ctypes.string_at(c_matrix,16), p_matrix2bytes(p_matrix))
 
     def test_invert_subbytes(self):
         for buffer in self.generate_inputs():
             with self.subTest(buffer=buffer):
-                # Creating a matrix data structure for c_matrix
-                block = ctypes.create_string_buffer(buffer)
-                CMatrixType = (ctypes.c_ubyte * 4) * 4
-                c_matrix = CMatrixType()
-
-                p_matrix = p_bytes2matrix(buffer)
-                self.rijndael.bytes2matrix(block, c_matrix)
+                # Creating a matrices for c_matrix, p_matrix
+                c_matrix, p_matrix = self.create_matrices(buffer)
 
                 self.rijndael.sub_bytes(c_matrix)
                 self.rijndael.invert_sub_bytes(c_matrix)
@@ -155,13 +139,8 @@ class TestAes(unittest.TestCase):
     def test_invert_shiftrows(self):
         for buffer in self.generate_inputs():
             with self.subTest(buffer=buffer):
-                # Creating a matrix data structure for c_matrix
-                block = ctypes.create_string_buffer(buffer)
-                CMatrixType = (ctypes.c_ubyte * 4) * 4
-                c_matrix = CMatrixType()
-
-                p_matrix = p_bytes2matrix(buffer)
-                self.rijndael.bytes2matrix(block, c_matrix)
+                # Creating a matrices for c_matrix, p_matrix
+                c_matrix, p_matrix = self.create_matrices(buffer)
 
                 self.rijndael.shift_rows(c_matrix)
                 self.rijndael.invert_shift_rows(c_matrix)
@@ -172,13 +151,8 @@ class TestAes(unittest.TestCase):
     def test_invert_mixcolumns(self):
         for buffer in self.generate_inputs():
             with self.subTest(buffer=buffer):
-                # Creating a matrix data structure for c_matrix
-                block = ctypes.create_string_buffer(buffer)
-                CMatrixType = (ctypes.c_ubyte * 4) * 4
-                c_matrix = CMatrixType()
-
-                p_matrix = p_bytes2matrix(buffer)
-                self.rijndael.bytes2matrix(block, c_matrix)
+                # Creating a matrices for c_matrix, p_matrix
+                c_matrix, p_matrix = self.create_matrices(buffer)
 
                 self.rijndael.mix_columns(c_matrix)
                 self.rijndael.invert_mix_columns(c_matrix)

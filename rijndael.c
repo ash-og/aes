@@ -204,39 +204,6 @@ void add_round_key(unsigned char matrix[4][4], unsigned char *round_key) {
  */
 
 
-// def _expand_key(self, master_key):
-//         """
-//         Expands and returns a list of key matrices for the given master_key.
-//         """
-        // # Initialize round keys with raw key material.
-        // key_columns = bytes2matrix(master_key)
-        // iteration_size = len(master_key) // 4
-
-        // i = 1
-        // while len(key_columns) < (self.n_rounds + 1) * 4:
-        //     # Copy previous word.
-        //     word = list(key_columns[-1])
-
-        //     # Perform schedule_core once every "row".
-        //     if len(key_columns) % iteration_size == 0:
-        //         # Circular shift.
-        //         word.append(word.pop(0))
-        //         # Map to S-BOX.
-        //         word = [s_box[b] for b in word]
-        //         # XOR with first byte of R-CON, since the others bytes of R-CON are 0.
-        //         word[0] ^= r_con[i]
-        //         i += 1
-        //     elif len(master_key) == 32 and len(key_columns) % iteration_size == 4:
-        //         # Run word through S-box in the fourth iteration when using a
-        //         # 256-bit key.
-        //         word = [s_box[b] for b in word]
-
-        //     # XOR with equivalent word from previous iteration.
-        //     word = xor_bytes(word, key_columns[-iteration_size])
-        //     key_columns.append(word)
-
-        // # Group key words in 4x4 byte matrices.
-        // return [key_columns[4*i : 4*(i+1)] for i in range(len(key_columns) // 4)]
 void free_memory(unsigned char *key) {
   // Free the memory allocated for the key
   free(key);
@@ -245,8 +212,7 @@ void free_memory(unsigned char *key) {
 unsigned char *expand_key(unsigned char *cipher_key) {
 
   // Expands and returns a list of key matrices for the given master_key.
-  // Inspiration drawn from https://github.com/m3y54m/aes-in-c?tab=readme-ov-file#the-key-expansion
-
+  
   // Allocating the 176 bytes required for the AES-128 expanded key.
   unsigned char *expandedKey =
       (unsigned char *)malloc(sizeof(unsigned char) * KEY_EXP_SIZE);
@@ -284,12 +250,6 @@ unsigned char *expand_key(unsigned char *cipher_key) {
     }
     return expandedKey;
 }
-
- 
-
- 
-
-
 
 /*
  * The implementations of the functions declared in the
