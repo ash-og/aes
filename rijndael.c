@@ -1,6 +1,22 @@
 /*
  * Aisling Young - D21127518
- * TODO: Add a brief description of this code.
+ * This code implements AES-128 encryption and decryption algorithms.
+ * It includes the following functions:
+ * - bytes2matrix: Converts a 16-byte block into a 4x4 matrix
+ * - matrix2bytes: Converts a 4x4 matrix into a 16-byte block
+ * - sub_bytes: Replaces each byte in the state with another one using the Rijndael S Box
+ * - shift_rows: Shifts the rows of the state to the left
+ * - xtime: Multiplies a byte by 2, and XORs it with 0x1B if the most significant bit of the byte is 1
+ * - mix_single_column: Multiplies a column by 2, 3, 1, 1
+ * - mix_columns: A linear transformation of the columns of the state
+ * - invert_sub_bytes: Replaces each byte in the state with another one using the inverted Rijndael S Box
+ * - invert_shift_rows: Shifts the rows of the state to the right
+ * - invert_mix_columns: A linear transformation of the columns of the state
+ * - add_round_key: Combines each byte of the state with a round key
+ * - free_memory: Frees the memory allocated for the key
+ * - expand_key: Expands the given 128-bit cipher key and returns a 176-byte list of 11 round keys
+ * - aes_encrypt_block: Encrypts a single block of plaintext using the given key
+ * - aes_decrypt_block: Decrypts a single block of ciphertext using the given key * 
  */
 
 #include <stdint.h>
@@ -49,6 +65,7 @@ static const unsigned char inv_s_box[] = {
     0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26, 0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D,
 };
 
+/* aes rcon box for key expansion */
 static const unsigned char r_con[] = {
     0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40,
     0x80, 0x1B, 0x36, 0x6C, 0xD8, 0xAB, 0x4D, 0x9A,
@@ -57,16 +74,14 @@ static const unsigned char r_con[] = {
 };
 
 void bytes2matrix(unsigned char *block, unsigned char matrix[4][4]) {
+    // Convert a 16-byte block into a 4x4 matrix
     for (int i = 0; i < 16; ++i) {
         matrix[i / 4][i % 4] = block[i];
     }
 }
 
-// def matrix2bytes(matrix):
-//     """ Converts a 4x4 matrix into a 16-byte array.  """
-//     return bytes(sum(matrix, []))
-
 void matrix2bytes(unsigned char matrix[4][4], unsigned char* block) {
+    // Convert a 4x4 matrix into a 16-byte block
     int index = 0;
     for (int row = 0; row < 4; ++row) {
         for (int col = 0; col < 4; ++col) {
@@ -85,6 +100,7 @@ void sub_bytes(unsigned char matrix[4][4]) {
 }
 
 void shift_rows(unsigned char matrix[4][4]) {
+    // Shift the rows of the state to the left
     unsigned char temp;
     
     // Row 1: left shift by 1
@@ -210,20 +226,15 @@ void free_memory(unsigned char *key) {
   free(key);
 }
 
-/*
- * This function should expand the round key. Given an input,
- * which is a single 128-bit key, it should return a 176-byte
- * vector, containing the 11 round keys one after the other
- */
-
 unsigned char *expand_key(unsigned char *cipher_key) {
 
-    // Expands and returns a list of key matrices for the given master_key.
+    // Expands the given 128-bit cipher_key and returns a 176-byte list of 11 round keys .
     
     // Allocating the 176 bytes required for the AES-128 expanded key.
     unsigned char *expandedKey =
         (unsigned char *)malloc(sizeof(unsigned char) * KEY_EXP_SIZE);
 
+    // Copying the current cipher key to the first 16 bytes of the expanded key.
     memcpy(expandedKey, cipher_key, 16);
 
     int current_size = 16;
@@ -231,10 +242,12 @@ unsigned char *expand_key(unsigned char *cipher_key) {
     int r_con_i = 1;
     int key_len = 16;
 
-    while (current_size < KEY_EXP_SIZE) {
-        // Read the last word
+    while (current_size < KEY_EXP_SIZE) { 
+        // While the current size of the expanded key is less than 176 bytes do the following:
+        // Assign the last 4 bytes of the expanded key to the word variable.
         memcpy(word, &expandedKey[current_size - 4], 4);
 
+        // if the current column is the last one, perform schedule_core
         if (current_size % key_len == 0) {
             // Perform schedule_core (circular shift, s-box sub_bytes, rcon)
             unsigned char t = word[0];
@@ -258,77 +271,68 @@ unsigned char *expand_key(unsigned char *cipher_key) {
         return expandedKey;
 }
 
-/*
- * The implementations of the functions declared in the
- * header file should go here
- */
 
 unsigned char *aes_encrypt_block(unsigned char *plaintext, unsigned char *key) {
-  // TODO: Implement me!
+  // Encrypts a single block of plaintext using the given key
+
+    // Allocating the 16 bytes required for the output.
     unsigned char *output =
         (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
 
+    // Expanding the key
     unsigned char *expanded_key = expand_key(key);
+
+    // Converting the plaintext into a 4x4 matrix
     unsigned char matrix[4][4];
     bytes2matrix(plaintext, matrix);
+
+    // Perform the initial round
     add_round_key(matrix, expanded_key);
+    // Perform the 9 rounds
     for (int i = 1; i < 10; i++) {
         sub_bytes(matrix);
         shift_rows(matrix);
         mix_columns(matrix);
         add_round_key(matrix, expanded_key + i * 16);
     }
+    // Perform the final round
     sub_bytes(matrix);
     shift_rows(matrix);
     add_round_key(matrix, expanded_key + 160);
+    // Free the memory allocated for the expanded key
     free_memory(expanded_key);
-
+    // Convert the 4x4 matrix back into a 16-byte block
     matrix2bytes(matrix, output);
     return output;
 }
 
-// def decrypt_block(self, ciphertext):
-//         """
-//         Decrypts a single block of 16 byte long ciphertext.
-//         """
-//         assert len(ciphertext) == 16
-
-//         cipher_state = bytes2matrix(ciphertext)
-
-//         add_round_key(cipher_state, self._key_matrices[-1])
-//         inv_shift_rows(cipher_state)
-//         inv_sub_bytes(cipher_state)
-
-//         for i in range(self.n_rounds - 1, 0, -1):
-//             add_round_key(cipher_state, self._key_matrices[i])
-//             inv_mix_columns(cipher_state)
-//             inv_shift_rows(cipher_state)
-//             inv_sub_bytes(cipher_state)
-
-//         add_round_key(cipher_state, self._key_matrices[0])
-
-//         return matrix2bytes(cipher_state)
-
 unsigned char *aes_decrypt_block(unsigned char *ciphertext,
                                  unsigned char *key) {
+    // Decrypts a single block of ciphertext using the given key
     unsigned char *output =
         (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
-    
+
+    // Expand the key
     unsigned char *expanded_key = expand_key(key);
+    // Convert the ciphertext into a 4x4 matrix
     unsigned char matrix[4][4];
     bytes2matrix(ciphertext, matrix);
+    // Perform the initial round
     add_round_key(matrix, expanded_key + 160);
     invert_shift_rows(matrix);
     invert_sub_bytes(matrix);
+    // Perform the 9 rounds
     for (int i = 9; i > 0; i--) {
         add_round_key(matrix, expanded_key + i * 16);
         invert_mix_columns(matrix);
         invert_shift_rows(matrix);
         invert_sub_bytes(matrix);
     }
+    // Perform the final round
     add_round_key(matrix, expanded_key);
+    // free the memory allocated for the expanded key
     free_memory(expanded_key);
-
+    // Convert the 4x4 matrix back into a 16-byte block
     matrix2bytes(matrix, output);
     return output;
 }
