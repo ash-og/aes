@@ -2,13 +2,6 @@
 
 An AES encryption algorithm written in C based on the Python implementation - submodule aes. 
 
-## Table of Contents
-
-- [Installation](#installation)
-- [Usage](#usage)
-- [Contributing](#contributing)
-- [License](#license)
-
 ## Installation
 
 ### Prerequisites
@@ -25,3 +18,4 @@ An AES encryption algorithm written in C based on the Python implementation - su
    make all
 4. Run program:
     ./main
+
