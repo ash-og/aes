@@ -1,6 +1,6 @@
 /*
- * TODO: Add your name and student number here, along with
- *       a brief description of this code.
+ * Aisling Young - D21127518
+ * Header file for AES encryption and decryption functions based on the Rijndael algorithm.
  */
 
 #ifndef RIJNDAEL_H
