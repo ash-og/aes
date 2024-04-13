@@ -13,9 +13,12 @@ An AES encryption algorithm written in C based on the Python implementation - su
    ```bash
    git clone https://github.com/ash-og/aes_c.git
 2. Navigate to the project directory:
+   ```bash
     cd aes_c
 3. Compile the project:
+   ```bash
    make all
 4. Run program:
+   ```bash
     ./main
 
