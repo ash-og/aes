@@ -85,7 +85,7 @@ void sub_bytes(unsigned char matrix[4][4]) {
 }
 
 void shift_rows(unsigned char matrix[4][4]) {
-  unsigned char temp;
+    unsigned char temp;
     
     // Row 1: left shift by 1
     // s[0][1], s[1][1], s[2][1], s[3][1] = s[1][1], s[2][1], s[3][1], s[0][1]  
@@ -149,32 +149,32 @@ void invert_sub_bytes(unsigned char matrix[4][4]) {
 
 void invert_shift_rows(unsigned char matrix[4][4]) {
 
-  unsigned char temp;
+    unsigned char temp;
 
-  // Row 1: right shift by 1 
-  //  s[0][1], s[1][1], s[2][1], s[3][1] = s[3][1], s[0][1], s[1][1], s[2][1]
-  temp = matrix[3][1];
-  matrix[3][1] = matrix[2][1];
-  matrix[2][1] = matrix[1][1];
-  matrix[1][1] = matrix[0][1];
-  matrix[0][1] = temp;
+    // Row 1: right shift by 1 
+    //  s[0][1], s[1][1], s[2][1], s[3][1] = s[3][1], s[0][1], s[1][1], s[2][1]
+    temp = matrix[3][1];
+    matrix[3][1] = matrix[2][1];
+    matrix[2][1] = matrix[1][1];
+    matrix[1][1] = matrix[0][1];
+    matrix[0][1] = temp;
 
-  // Row 2: right shift by 2 
-  // s[0][2], s[1][2], s[2][2], s[3][2] = s[2][2], s[3][2], s[0][2], s[1][2]
-  temp = matrix[0][2];
-  matrix[0][2] = matrix[2][2];
-  matrix[2][2] = temp;
-  temp = matrix[1][2];
-  matrix[1][2] = matrix[3][2];
-  matrix[3][2] = temp;
+    // Row 2: right shift by 2 
+    // s[0][2], s[1][2], s[2][2], s[3][2] = s[2][2], s[3][2], s[0][2], s[1][2]
+    temp = matrix[0][2];
+    matrix[0][2] = matrix[2][2];
+    matrix[2][2] = temp;
+    temp = matrix[1][2];
+    matrix[1][2] = matrix[3][2];
+    matrix[3][2] = temp;
 
-  // Row 3: right shift by 3 
-  // s[0][3], s[1][3], s[2][3], s[3][3] = s[1][3], s[2][3], s[3][3], s[0][3]
-  temp = matrix[1][3];
-  matrix[1][3] = matrix[2][3];
-  matrix[2][3] = matrix[3][3];
-  matrix[3][3] = matrix[0][3];
-  matrix[0][3] = temp;
+    // Row 3: right shift by 3 
+    // s[0][3], s[1][3], s[2][3], s[3][3] = s[1][3], s[2][3], s[3][3], s[0][3]
+    temp = matrix[1][3];
+    matrix[1][3] = matrix[2][3];
+    matrix[2][3] = matrix[3][3];
+    matrix[3][3] = matrix[0][3];
+    matrix[0][3] = temp;
 }
 
 void invert_mix_columns(unsigned char matrix[4][4]) {
@@ -218,44 +218,44 @@ void free_memory(unsigned char *key) {
 
 unsigned char *expand_key(unsigned char *cipher_key) {
 
-  // Expands and returns a list of key matrices for the given master_key.
-  
-  // Allocating the 176 bytes required for the AES-128 expanded key.
-  unsigned char *expandedKey =
-      (unsigned char *)malloc(sizeof(unsigned char) * KEY_EXP_SIZE);
+    // Expands and returns a list of key matrices for the given master_key.
+    
+    // Allocating the 176 bytes required for the AES-128 expanded key.
+    unsigned char *expandedKey =
+        (unsigned char *)malloc(sizeof(unsigned char) * KEY_EXP_SIZE);
 
-  memcpy(expandedKey, cipher_key, 16);
+    memcpy(expandedKey, cipher_key, 16);
 
-  int current_size = 16;
-  unsigned char word[4]; 
-  int r_con_i = 1;
-  int key_len = 16;
+    int current_size = 16;
+    unsigned char word[4]; 
+    int r_con_i = 1;
+    int key_len = 16;
 
-  while (current_size < KEY_EXP_SIZE) {
-    // Read the last word
-    memcpy(word, &expandedKey[current_size - 4], 4);
+    while (current_size < KEY_EXP_SIZE) {
+        // Read the last word
+        memcpy(word, &expandedKey[current_size - 4], 4);
 
-    if (current_size % key_len == 0) {
-        // Perform schedule_core (circular shift, s-box sub_bytes, rcon)
-        unsigned char t = word[0];
-        word[0] = word[1];
-        word[1] = word[2];
-        word[2] = word[3];
-        word[3] = t;
+        if (current_size % key_len == 0) {
+            // Perform schedule_core (circular shift, s-box sub_bytes, rcon)
+            unsigned char t = word[0];
+            word[0] = word[1];
+            word[1] = word[2];
+            word[2] = word[3];
+            word[3] = t;
 
-        for (int i = 0; i < 4; i++) {
-            word[i] = s_box[word[i]];
+            for (int i = 0; i < 4; i++) {
+                word[i] = s_box[word[i]];
+            }
+
+            word[0] ^= r_con[r_con_i++];
         }
-
-        word[0] ^= r_con[r_con_i++];
+        // xor word with the word 16 bytes before it
+        for (unsigned int i = 0; i < 4; i++) {
+            expandedKey[current_size] = expandedKey[current_size - key_len] ^ word[i];
+            current_size++;
+        }
     }
-    // xor word with the word 16 bytes before it
-    for (unsigned int i = 0; i < 4; i++) {
-        expandedKey[current_size] = expandedKey[current_size - key_len] ^ word[i];
-        current_size++;
-    }
-  }
-    return expandedKey;
+        return expandedKey;
 }
 
 /*
@@ -265,26 +265,26 @@ unsigned char *expand_key(unsigned char *cipher_key) {
 
 unsigned char *aes_encrypt_block(unsigned char *plaintext, unsigned char *key) {
   // TODO: Implement me!
-  unsigned char *output =
-      (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
+    unsigned char *output =
+        (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
 
-  unsigned char *expanded_key = expand_key(key);
-  unsigned char matrix[4][4];
-  bytes2matrix(plaintext, matrix);
-  add_round_key(matrix, expanded_key);
-  for (int i = 1; i < 10; i++) {
+    unsigned char *expanded_key = expand_key(key);
+    unsigned char matrix[4][4];
+    bytes2matrix(plaintext, matrix);
+    add_round_key(matrix, expanded_key);
+    for (int i = 1; i < 10; i++) {
+        sub_bytes(matrix);
+        shift_rows(matrix);
+        mix_columns(matrix);
+        add_round_key(matrix, expanded_key + i * 16);
+    }
     sub_bytes(matrix);
     shift_rows(matrix);
-    mix_columns(matrix);
-    add_round_key(matrix, expanded_key + i * 16);
-  }
-  sub_bytes(matrix);
-  shift_rows(matrix);
-  add_round_key(matrix, expanded_key + 160);
-  free_memory(expanded_key);
+    add_round_key(matrix, expanded_key + 160);
+    free_memory(expanded_key);
 
-  matrix2bytes(matrix, output);
-  return output;
+    matrix2bytes(matrix, output);
+    return output;
 }
 
 // def decrypt_block(self, ciphertext):
@@ -311,26 +311,25 @@ unsigned char *aes_encrypt_block(unsigned char *plaintext, unsigned char *key) {
 
 unsigned char *aes_decrypt_block(unsigned char *ciphertext,
                                  unsigned char *key) {
-  // TODO: Implement me!
-  unsigned char *output =
-      (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
-  
-  unsigned char *expanded_key = expand_key(key);
-  unsigned char matrix[4][4];
-  bytes2matrix(ciphertext, matrix);
-  add_round_key(matrix, expanded_key + 160);
-  invert_shift_rows(matrix);
-  invert_sub_bytes(matrix);
-  for (int i = 9; i > 0; i--) {
-      add_round_key(matrix, expanded_key + i * 16);
-      invert_mix_columns(matrix);
-      invert_shift_rows(matrix);
-      invert_sub_bytes(matrix);
-  }
-  add_round_key(matrix, expanded_key);
-  free_memory(expanded_key);
+    unsigned char *output =
+        (unsigned char *)malloc(sizeof(unsigned char) * BLOCK_SIZE);
+    
+    unsigned char *expanded_key = expand_key(key);
+    unsigned char matrix[4][4];
+    bytes2matrix(ciphertext, matrix);
+    add_round_key(matrix, expanded_key + 160);
+    invert_shift_rows(matrix);
+    invert_sub_bytes(matrix);
+    for (int i = 9; i > 0; i--) {
+        add_round_key(matrix, expanded_key + i * 16);
+        invert_mix_columns(matrix);
+        invert_shift_rows(matrix);
+        invert_sub_bytes(matrix);
+    }
+    add_round_key(matrix, expanded_key);
+    free_memory(expanded_key);
 
-  matrix2bytes(matrix, output);
-  return output;
+    matrix2bytes(matrix, output);
+    return output;
 }
 
